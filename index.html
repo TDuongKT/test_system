@@ -1,0 +1,52 @@
+<body>
+    <div class="counter-display">
+        <h1>Push-up: <span id="pushupCount">0</span></h1>
+        <h1>Squat: <span id="squatCount">0</span></h1>
+        <p>Elbow Angle: <span id="elbowAngleDisplay">N/A</span></p>
+        <p>Knee Angle: <span id="kneeAngleDisplay">N/A</span></p>
+        <p>Shoulder-to-Knee Distance: <span id="shoulderKneeDisplay">N/A</span></p>
+    </div>
+    
+    <div class="controls">
+        <input type="file" id="videoInput" accept="video/*" style="display: none;">
+        <button id="selectFileBtn">Chọn Tệp</button>
+        <button id="openCameraBtn">Mở Camera</button>
+    </div>
+    
+    <div id="status"></div>
+
+    <div class="settings">
+        <h2>Cài đặt ngưỡng</h2>
+        <label>Ngưỡng Chống Đẩy: <input type="number" id="pushupThresholdInput" value="90"></label>
+        <label>Ngưỡng Squat: <input type="number" id="squatThresholdInput" value="100"></label>
+        <label>Ngưỡng Khoảng cách (px): <input type="number" id="distanceThresholdInput" value="50"></label>
+        <p>Keypoints được chọn: <span id="selectedSide">N/A</span></p>
+    </div>
+    <!-- <div class="debug-info">
+        <h2>Thông tin gỡ lỗi</h2>
+        <h3>Chống đẩy (Push-up)</h3>
+        <p>Flag: <span id="flagPushup">up</span></p>
+        <p>Góc lớn nhất: <span id="maxPushupAngle">0</span>°</p>
+        <p>Góc nhỏ nhất: <span id="minPushupAngle">180</span>°</p>
+        <p>Khoảng cách xa nhất: <span id="farthestPushupDistance">N/A</span> px</p>
+        <p>Khoảng cách gần nhất: <span id="closestPushupDistance">N/A</span> px</p>
+        <p>Độ thay đổi khoảng cách: <span id="totalPushupDistanceChange">N/A</span> px</p>
+
+        <h3>Squat</h3>
+        <p>Flag: <span id="flagSquat">up</span></p>
+        <p>Góc lớn nhất: <span id="maxSquatAngle">0</span>°</p>
+        <p>Góc nhỏ nhất: <span id="minSquatAngle">180</span>°</p>
+        <p>Khoảng cách xa nhất: <span id="farthestSquatDistance">N/A</span> px</p>
+        <p>Khoảng cách gần nhất: <span id="closestSquatDistance">N/A</span> px</p>
+        <p>Độ thay đổi khoảng cách: <span id="totalSquatDistanceChange">N/A</span> px</p>
+    </div> -->
+
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="output"></canvas>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
+    
+    <script src="poseUtils.js"></script>
+    <script src="workoutTracker.js"></script>
+</body>
