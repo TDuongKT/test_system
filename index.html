@@ -1,91 +1,195 @@
-<!-- <body>
-    <div class="counter-display">
-        <h1>Push-up: <span id="pushupCount">0</span></h1>
-        <h1>Squat: <span id="squatCount">0</span></h1>
-        <p>Elbow Angle: <span id="elbowAngleDisplay">N/A</span></p>
-        <p>Knee Angle: <span id="kneeAngleDisplay">N/A</span></p>
-        <p>Shoulder-to-Knee Distance: <span id="shoulderKneeDisplay">N/A</span></p>
-        <h2>Debug Info</h2>
-        <p>Push-up Flag: <span id="pushupFlag">N/A</span></p>
-        <p>Push-up Farthest: <span id="pushupFarthest">N/A</span></p>
-        <p>Push-up Closest: <span id="pushupClosest">N/A</span></p>
-
-        <p>Squat Flag: <span id="squatFlag">N/A</span></p>
-        <p>Squat Farthest: <span id="squatFarthest">N/A</span></p>
-        <p>Squat Closest: <span id="squatClosest">N/A</span></p>
-    </div>
-    
-    <div class="controls">
-        <input type="file" id="videoInput" accept="video/*" style="display: none;">
-        <button id="selectFileBtn">Chọn Tệp</button>
-        <button id="openCameraBtn">Mở Camera</button>
-    </div>
-    
-    <div id="status"></div>
-
-    <div class="settings">
-        <h2>Cài đặt ngưỡng</h2>
-        <label>Ngưỡng Chống Đẩy: <input type="number" id="pushupThresholdInput" value="90"></label>
-        <label>Ngưỡng Squat: <input type="number" id="squatThresholdInput" value="100"></label>
-        <label>Ngưỡng Khoảng cách (px): <input type="number" id="distanceThresholdInput" value="50"></label>
-        <p>Keypoints được chọn: <span id="selectedSide">N/A</span></p>
-    </div>
-
-
-    <video id="video" autoplay muted playsinline></video>
-    <canvas id="output"></canvas>
-    
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
-    
-    <script src="poseUtils.js"></script>
-    <script src="workoutTracker.js"></script>
-</body> -->
-
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 10px;
+      background-color: #f4f4f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .container {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .video-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4/3;
+    }
+    #video, #output {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .controls button {
+      flex: 1;
+      padding: 8px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background-color 0.3s;
+    }
+    .controls button:hover {
+      background-color: #0056b3;
+    }
+    .controls button.reset {
+      background-color: #dc3545;
+    }
+    .controls button.reset:hover {
+      background-color: #b02a37;
+    }
+    .settings {
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .settings label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    .settings input {
+      width: 60px;
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    .counter-display {
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .counter-display h1 {
+      margin: 8px 0;
+      font-size: 18px;
+      color: #333;
+    }
+    .counter-display p {
+      margin: 5px 0;
+      font-size: 14px;
+      color: #555;
+    }
+    .debug-display {
+      padding: 10px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      font-size: 12px;
+      color: #666;
+    }
+    .debug-display h3 {
+      margin: 8px 0 5px;
+      font-size: 14px;
+    }
+    #status {
+      margin: 8px 0;
+      color: #333;
+      font-size: 14px;
+      font-weight: bold;
+      text-align: center;
+    }
+    @media (min-width: 768px) {
+      .container {
+        max-width: 800px;
+        grid-template-columns: 1fr 1fr;
+        display: grid;
+        gap: 15px;
+      }
+      .video-container {
+        grid-column: 2;
+        grid-row: 1 / span 4;
+      }
+      .controls, .settings, .counter-display, .debug-display {
+        grid-column: 1;
+      }
+      .controls button {
+        font-size: 16px;
+      }
+      .settings label, .counter-display p, #status {
+        font-size: 16px;
+      }
+      .counter-display h1 {
+        font-size: 20px;
+      }
+      .debug-display, .debug-display h3 {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
 <body>
-  <div class="counter-display">
-    <h1>Push-up: <span id="pushupCount">0</span></h1>
-    <h1>Squat: <span id="squatCount">0</span></h1>
-    <p>Elbow Angle: <span id="elbowAngleDisplay">N/A</span></p>
-    <p>Knee Angle: <span id="kneeAngleDisplay">N/A</span></p>
-    <p>Shoulder-to-Knee Distance: <span id="shoulderKneeDisplay">N/A</span></p>
-    <p>Selected Side: <span id="selectedSide">N/A</span></p>
+  <div class="container">
+    <div class="video-container">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="output"></canvas>
+    </div>
+    <div class="counter-display">
+      <h1>Push-up: <span id="pushupCount">0</span></h1>
+      <h1>Squat: <span id="squatCount">0</span></h1>
+      <p>Elbow Angle: <span id="elbowAngleDisplay">N/A</span></p>
+      <p>Knee Angle: <span id="kneeAngleDisplay">N/A</span></p>
+      <p>Shoulder-to-Knee Distance: <span id="shoulderKneeDisplay">N/A</span></p>
+      <p>Selected Side: <span id="selectedSide">N/A</span></p>
+    </div>
     <div class="debug-display">
-        <h2>Debug Info</h2>
-
-        <h3>Push-up</h3>
-        <p>Flag: <span id="pushupFlag">N/A</span></p>
-        <p>Farthest Distance: <span id="pushupFarthest">N/A</span></p>
-        <p>Closest Distance: <span id="pushupClosest">N/A</span></p>
-
-        <h3>Squat</h3>
-        <p>Flag: <span id="squatFlag">N/A</span></p>
-        <p>Farthest Distance: <span id="squatFarthest">N/A</span></p>
-        <p>Closest Distance: <span id="squatClosest">N/A</span></p>
-</div>
+      <h3>Push-up</h3>
+      <p>Flag: <span id="pushupFlag">N/A</span></p>
+      <p>Farthest Distance: <span id="pushupFarthest">N/A</span></p>
+      <p>Closest Distance: <span id="pushupClosest">N/A</span></p>
+      <h3>Squat</h3>
+      <p>Flag: <span id="squatFlag">N/A</span></p>
+      <p>Farthest Distance: <span id="squatFarthest">N/A</span></p>
+      <p>Closest Distance: <span id="squatClosest">N/A</span></p>
+    </div>
+    <div class="settings">
+      <label>Ngưỡng Push-up: <input type="number" id="pushupThresholdInput" value="90"></label>
+      <label>Ngưỡng Squat: <input type="number" id="squatThresholdInput" value="100"></label>
+      <label>Ngưỡng Khoảng cách (px): <input type="number" id="distanceThresholdInput" value="50"></label>
+    </div>
+    <div class="controls">
+      <input type="file" id="videoInput" accept="video/*" style="display: none;">
+      <button id="selectFileBtn">Chọn Tệp</button>
+      <button id="openCameraBtn">Mở Camera</button>
+      <button id="resetCountsBtn" class="reset">Reset Đếm</button>
+    </div>
+    <div id="status"></div>
   </div>
-
-  <div class="controls">
-    <input type="file" id="videoInput" accept="video/*" style="display: none;">
-    <button id="selectFileBtn">Chọn Tệp</button>
-    <button id="openCameraBtn">Mở Camera</button>
-  </div>
-
-  <div id="status"></div>
-
-  <div class="settings">
-    <h2>Cài đặt ngưỡng</h2>
-    <label>Ngưỡng Push-up: <input type="number" id="pushupThresholdInput" value="90"></label>
-    <label>Ngưỡng Squat: <input type="number" id="squatThresholdInput" value="100"></label>
-    <label>Ngưỡng Khoảng cách (px): <input type="number" id="distanceThresholdInput" value="50"></label>
-  </div>
-
-  <video id="video" autoplay muted playsinline></video>
-  <canvas id="output"></canvas>
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection"></script>
-
   <script src="poseUtils.js"></script>
   <script src="workoutTracker.js"></script>
 </body>
+</html>

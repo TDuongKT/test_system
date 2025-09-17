@@ -1,20 +1,12 @@
-// =======================
-// 1. Hàm tính góc
-// =======================
 function getAngle(p1, p2, p3) {
   if (!p1 || !p2 || !p3 || p1.score < 0.5 || p2.score < 0.5 || p3.score < 0.5) return null;
   const a = Math.hypot(p2.x - p1.x, p2.y - p1.y);
   const b = Math.hypot(p2.x - p3.x, p2.y - p3.y);
   const c = Math.hypot(p1.x - p3.x, p1.y - p3.y);
-
   if (a === 0 || b === 0) return null;
-  const angleRad = Math.acos((a * a + b * b - c * c) / (2 * a * b));
-  return angleRad * 180 / Math.PI;
+  return Math.acos((a * a + b * b - c * c) / (2 * a * b)) * 180 / Math.PI;
 }
 
-// =======================
-// 2. Hàm vẽ keypoints
-// =======================
 function drawKeypoints(keypoints, ctx) {
   keypoints.forEach(kp => {
     if (kp.score > 0.5) {
@@ -26,18 +18,10 @@ function drawKeypoints(keypoints, ctx) {
   });
 }
 
-// =======================
-// 3. Hàm vẽ bộ xương (MoveNet 17 keypoints)
-// =======================
 const skeletonConnections = [
   [0, 1], [0, 2], [1, 3], [2, 4],
-  [5, 6],
-  [5, 7], [7, 9],
-  [6, 8], [8, 10],
-  [5, 11], [6, 12],
-  [11, 12],
-  [11, 13], [13, 15],
-  [12, 14], [14, 16]
+  [5, 6], [5, 7], [7, 9], [6, 8], [8, 10],
+  [5, 11], [6, 12], [11, 12], [11, 13], [13, 15], [12, 14], [14, 16]
 ];
 
 function drawSkeleton(keypoints, ctx) {
@@ -54,9 +38,6 @@ function drawSkeleton(keypoints, ctx) {
   });
 }
 
-// =======================
-// 4. Hàm vẽ góc
-// =======================
 function drawAngle(p1, p2, p3, ctx, text) {
   if (!p1 || !p2 || !p3 || p1.score < 0.5 || p2.score < 0.5 || p3.score < 0.5) return;
   ctx.beginPath();
@@ -65,20 +46,13 @@ function drawAngle(p1, p2, p3, ctx, text) {
   ctx.lineTo(p3.x, p3.y);
   ctx.strokeStyle = 'purple';
   ctx.stroke();
-
   ctx.fillStyle = 'black';
   ctx.fillText(text, p2.x + 10, p2.y - 10);
 }
 
-// =======================
-// 5. Hàm chọn bên tốt nhất (MoveNet index 17)
-// =======================
 function selectBestSide(keypoints) {
-  // Elbow: [vai, khuỷu, cổ tay]
   const leftElbow = [keypoints[5], keypoints[7], keypoints[9]];
   const rightElbow = [keypoints[6], keypoints[8], keypoints[10]];
-
-  // Knee: [hông, gối, mắt cá]
   const leftKnee = [keypoints[11], keypoints[13], keypoints[15]];
   const rightKnee = [keypoints[12], keypoints[14], keypoints[16]];
 
@@ -93,9 +67,6 @@ function selectBestSide(keypoints) {
   };
 }
 
-// =======================
-// 6. Hàm tính khoảng cách Euclid
-// =======================
 function getEuclideanDistance(p1, p2) {
   if (!p1 || !p2 || p1.score < 0.5 || p2.score < 0.5) return null;
   return Math.hypot(p2.x - p1.x, p2.y - p1.y);
