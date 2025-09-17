@@ -1,184 +1,4 @@
-// // =======================
-// // 1. Khởi tạo biến
-// // =======================
-// let pushupCount = 0;
-// let squatCount = 0;
-// let isPushupDown = false;
-// let isSquatDown = false;
-// let hipInitialY = null;
-// let hipHistory = [];
-// const HISTORY_SIZE = 15; // Giảm xuống để phản ứng nhanh hơn
-// let detector = null;
-// // =======================
-// // 2. Tham chiếu DOM và Ngưỡng có thể điều chỉnh
-// // =======================
-// const video = document.getElementById('video');
-// const videoInput = document.getElementById('videoInput');
-// const selectFileBtn = document.getElementById('selectFileBtn');
-// const openCameraBtn = document.getElementById('openCameraBtn');
-// const statusDiv = document.getElementById('status');
-// const canvas = document.getElementById('output');
-// const ctx = canvas.getContext('2d');
 
-// const elbowAngleDisplay = document.getElementById('elbowAngleDisplay');
-// const kneeAngleDisplay = document.getElementById('kneeAngleDisplay');
-// const hipDisplacementDisplay = document.getElementById('hipDisplacementDisplay');
-// const selectedSideDisplay = document.getElementById('selectedSide');
-
-// // Các input để điều chỉnh ngưỡng
-// const pushupThresholdInput = document.getElementById('pushupThresholdInput');
-// const squatThresholdInput = document.getElementById('squatThresholdInput');
-// const hipPushupThresholdInput = document.getElementById('hipPushupThresholdInput');
-// const hipSquatThresholdInput = document.getElementById('hipSquatThresholdInput');
-
-
-// // =======================
-// // 3. Các hàm chính
-// // =======================
-
-// // Tải mô hình ngay lập tức khi trang tải
-// document.addEventListener('DOMContentLoaded', () => {
-//     setupDetector();
-// });
-// selectFileBtn.addEventListener('click', () => videoInput.click());
-// videoInput.addEventListener('change', (event) => {
-//     const file = event.target.files[0];
-//     if (file) {
-//         const videoURL = URL.createObjectURL(file);
-//         video.src = videoURL;
-//         video.loop = true;
-//         video.load();
-//     }
-// });
-
-// openCameraBtn.addEventListener('click', async () => {
-//     try {
-//         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-//         video.srcObject = stream;
-//         video.load();
-//     } catch (err) {
-//         statusDiv.innerText = 'Lỗi truy cập camera: ' + err.message;
-//     }
-// });
-
-// async function setupDetector() {
-//     if (detector) return;
-//     try {
-//         statusDiv.innerText = 'Đang khởi tạo mô hình...';
-//         const detectorConfig = { modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING };
-//         detector = await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, detectorConfig);
-//         statusDiv.innerText = 'Mô hình đã sẵn sàng.';
-//         // Bắt đầu vòng lặp xử lý video nếu đã có luồng video
-//         if (video.src || video.srcObject) {
-//             renderPrediction();
-//         }
-//     } catch (error) {
-//         statusDiv.innerText = `Lỗi khởi tạo mô hình: ${error.message}`;
-//     }
-// }
-
-// async function renderPrediction() {
-//     if (video.readyState === 4 && detector) {
-//         const poses = await detector.estimatePoses(video);
-//         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-//         if (poses && poses.length > 0) {
-//             const keypoints = poses[0].keypoints;
-            
-//             // Lấy các ngưỡng hiện tại từ giao diện
-//             const PUSHUP_ANGLE_THRESHOLD = parseFloat(pushupThresholdInput.value);
-//             const SQUAT_KNEE_ANGLE_THRESHOLD = parseFloat(squatThresholdInput.value);
-//             const PUSHUP_HIP_THRESHOLD_Y = parseFloat(hipPushupThresholdInput.value);
-//             const SQUAT_HIP_THRESHOLD_Y = parseFloat(hipSquatThresholdInput.value);
-
-//             // Logic chọn keypoints tốt nhất
-//             const { elbowSide, kneeSide } = selectBestSide(keypoints);
-//             selectedSideDisplay.innerText = `Elbow: ${elbowSide}, Knee: ${kneeSide}`;
-
-//             // Lấy các điểm cần thiết dựa trên lựa chọn
-//             const shoulderKeypoints = elbowSide === 'left' ? [5, 7, 9] : [6, 8, 10];  
-//             const kneeKeypoints = kneeSide === 'left' ? [11, 13, 15] : [12, 14, 16];  
-//             const hipKeypoints = [keypoints[11], keypoints[12]];
-
-//             const elbowAngle = getAngle(keypoints[shoulderKeypoints[0]], keypoints[shoulderKeypoints[1]], keypoints[shoulderKeypoints[2]]);
-//             const kneeAngle = getAngle(keypoints[kneeKeypoints[0]], keypoints[kneeKeypoints[1]], keypoints[kneeKeypoints[2]]);
-            
-//             // Tính toán độ dịch chuyển hông
-//             const midHipY = (hipKeypoints[0].y + hipKeypoints[1].y) / 2;
-//             hipHistory.push(midHipY);
-//             if (hipHistory.length > HISTORY_SIZE) hipHistory.shift();
-//             const hipDisplacement = Math.max(...hipHistory) - Math.min(...hipHistory);
-
-//             // Cập nhật giao diện
-//             elbowAngleDisplay.innerText = elbowAngle ? elbowAngle.toFixed(1) + '°' : 'N/A';
-//             kneeAngleDisplay.innerText = kneeAngle ? kneeAngle.toFixed(1) + '°' : 'N/A';
-//             hipDisplacementDisplay.innerText = hipDisplacement.toFixed(1);
-            
-//             // Vẽ
-//             drawKeypoints(keypoints, ctx);
-//             drawSkeleton(keypoints, ctx);
-//             if (elbowAngle) drawAngle(keypoints[shoulderKeypoints[0]], keypoints[shoulderKeypoints[1]], keypoints[shoulderKeypoints[2]], ctx, `Elbow: ${elbowAngle.toFixed(1)}°`);
-//             if (kneeAngle) drawAngle(keypoints[kneeKeypoints[0]], keypoints[kneeKeypoints[1]], keypoints[kneeKeypoints[2]], ctx, `Knee: ${kneeAngle.toFixed(1)}°`);
-
-//             // Logic đếm được bổ sung
-//             processWorkoutCounts(elbowAngle, kneeAngle, hipDisplacement, PUSHUP_ANGLE_THRESHOLD, SQUAT_KNEE_ANGLE_THRESHOLD, PUSHUP_HIP_THRESHOLD_Y, SQUAT_HIP_THRESHOLD_Y);
-//         }
-//     }
-//     requestAnimationFrame(renderPrediction);
-// }
-
-
-// // Hàm xử lý logic đếm riêng
-// function processWorkoutCounts(elbowAngle, kneeAngle, hipDisplacement, pushupThreshold, squatThreshold, pushupHipThreshold, squatHipThreshold) {
-//     // Phân biệt bài tập dựa trên biên độ dịch chuyển hông
-//     if (hipDisplacement < pushupHipThreshold) {
-//         // Đang thực hiện Push-up
-//         if (elbowAngle !== null) {
-//             if (elbowAngle < pushupThreshold) {
-//                 isPushupDown = true;
-//             } else if (isPushupDown && elbowAngle > pushupThreshold + 20) {
-//                 pushupCount++;
-//                 isPushupDown = false;
-//                 document.getElementById('pushupCount').innerText = pushupCount;
-//             }
-//         }
-//     } else if (hipDisplacement > squatHipThreshold) {
-//         // Đang thực hiện Squat
-//         if (kneeAngle !== null) {
-//             if (kneeAngle < squatThreshold) {
-//                 isSquatDown = true;
-//             } else if (isSquatDown && kneeAngle > squatThreshold + 20) {
-//                 squatCount++;
-//                 isSquatDown = false;
-//                 document.getElementById('squatCount').innerText = squatCount;
-//             }
-//         }
-//     }
-// }
-
-// // Bắt đầu vòng lặp xử lý khi video đã tải
-// video.addEventListener('loadeddata', () => {
-//     canvas.width = video.videoWidth;
-//     canvas.height = video.videoHeight;
-//     // Bắt đầu vòng lặp render
-//     if (detector) {
-//         renderPrediction();
-//     }
-// });
-
-// // // Khi video đã load
-// // video.addEventListener('loadeddata', () => {
-// //     canvas.width = video.videoWidth;
-// //     canvas.height = video.videoHeight;
-// //     if (!detector) {
-// //         setupDetector();
-// //     }
-// // });
-
-
-// =======================
-// 1. Khởi tạo biến và tham chiếu DOM
-// =======================
 // =======================
 // 1. Khởi tạo biến và tham chiếu DOM
 // =======================
@@ -234,19 +54,26 @@ const shoulderKneeSquatInput = document.getElementById('shoulderKneeSquatInput')
 const shoulderKneePushupInput = document.getElementById('shoulderKneePushupInput');
 const distanceThresholdInput = document.getElementById('distanceThresholdInput');
 
-// const flagPushupDisplay = document.getElementById('flagPushup');
-// const maxPushupAngleDisplay = document.getElementById('maxPushupAngle');
-// const minPushupAngleDisplay = document.getElementById('minPushupAngle');
-// const farthestPushupDistanceDisplay = document.getElementById('farthestPushupDistance');
-// const closestPushupDistanceDisplay = document.getElementById('closestPushupDistance');
-// const totalPushupDistanceChangeDisplay = document.getElementById('totalPushupDistanceChange');
 
-// const flagSquatDisplay = document.getElementById('flagSquat');
-// const maxSquatAngleDisplay = document.getElementById('maxSquatAngle');
-// const minSquatAngleDisplay = document.getElementById('minSquatAngle');
-// const farthestSquatDistanceDisplay = document.getElementById('farthestSquatDistance');
-// const closestSquatDistanceDisplay = document.getElementById('closestSquatDistance');
-// const totalSquatDistanceChangeDisplay = document.getElementById('totalSquatDistanceChange');
+
+
+const flagPushupDisplay = document.getElementById('flagPushup');
+const maxPushupAngleDisplay = document.getElementById('maxPushupAngle');
+const minPushupAngleDisplay = document.getElementById('minPushupAngle');
+const farthestPushupDistanceDisplay = document.getElementById('farthestPushupDistance');
+const closestPushupDistanceDisplay = document.getElementById('closestPushupDistance');
+const totalPushupDistanceChangeDisplay = document.getElementById('totalPushupDistanceChange');
+
+const flagSquatDisplay = document.getElementById('flagSquat');
+const maxSquatAngleDisplay = document.getElementById('maxSquatAngle');
+const minSquatAngleDisplay = document.getElementById('minSquatAngle');
+const farthestSquatDistanceDisplay = document.getElementById('farthestSquatDistance');
+const closestSquatDistanceDisplay = document.getElementById('closestSquatDistance');
+const totalSquatDistanceChangeDisplay = document.getElementById('totalSquatDistanceChange');
+
+
+
+
 // =======================
 // 3. Các hàm chính
 // =======================
@@ -329,6 +156,7 @@ async function renderPrediction() {
                 PUSHUP_ANGLE_THRESHOLD, SQUAT_KNEE_ANGLE_THRESHOLD,
                 DISTANCE_THRESHOLD
             );
+            
 
             // Vẽ
             drawKeypoints(keypoints, ctx);
@@ -343,7 +171,8 @@ async function renderPrediction() {
 // Hàm logic mới được tinh chỉnh
 function processWorkout(elbowAngle, kneeAngle, shoulderToKneeDistance, pushupAngleThres, squatAngleThres, distThres) {
     if (shoulderToKneeDistance === null || elbowAngle === null || kneeAngle === null) return;
-
+    // trong processWorkout, cuối cùng gọi thêm:
+    updateDebugUI();
     // --- Logic cho Push-up ---
     // Tìm kiếm khoảng cách lớn nhất
     if (flag_pushup === 'up') {
@@ -410,6 +239,18 @@ function processWorkout(elbowAngle, kneeAngle, shoulderToKneeDistance, pushupAng
         }
     }
 }
+
+function updateDebugUI() {
+  document.getElementById('pushupFlag').innerText = flag_pushup;
+  document.getElementById('pushupFarthest').innerText = pushupState.farthest_distance ? pushupState.farthest_distance.toFixed(1) : "N/A";
+  document.getElementById('pushupClosest').innerText = pushupState.closest_distance ? pushupState.closest_distance.toFixed(1) : "N/A";
+
+  document.getElementById('squatFlag').innerText = flag_squat;
+  document.getElementById('squatFarthest').innerText = squatState.farthest_distance ? squatState.farthest_distance.toFixed(1) : "N/A";
+  document.getElementById('squatClosest').innerText = squatState.closest_distance ? squatState.closest_distance.toFixed(1) : "N/A";
+}
+
+
 
 // Bắt đầu vòng lặp xử lý khi video đã tải
 video.addEventListener('loadeddata', () => {
